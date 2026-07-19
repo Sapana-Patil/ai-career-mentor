@@ -10,6 +10,9 @@ app.use(cookieParser());
 const authRoutes = require('./routes/auth.routes');
 app.use('/api/auth', authRoutes);
 
+const analysisRoutes = require('./routes/analysis.routes');
+app.use('/api/analysis', analysisRoutes);
+
 
 
 module.exports = app;
