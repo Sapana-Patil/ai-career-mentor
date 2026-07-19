@@ -1,6 +1,5 @@
 const ai = require('../config/gemini');
 const { z } = require('zod');
-const { zodToJsonSchema } = require('zod-to-json-schema');
 
 const resumeJsonSchema = z.object({
     matchScore: z.number()
@@ -34,7 +33,8 @@ const resumeJsonSchema = z.object({
 });
 
 async function generateReport(resumeText, selfDescription, jobDescription) {
-    const resumeSchema = z.fromJSONSchema(resumeJsonSchema);
+const resumeSchema = z.fromJSONSchema(resumeJsonSchema);
+    
 
     const prompt = `You are a senior technical interviewer and career coach who has conducted hundreds of interviews for the role described below. You are preparing a candidate for their upcoming interview.
     Resume:${resumeText}
@@ -54,7 +54,7 @@ could apply to anyone.
    multiple core requirements. Be honest and realistic — do not default to 
    a "safe" middle score.
 
-2. **Technical Questions**: Generate 5-7 questions a real interviewer would 
+2. **Technical Questions**: Generate 5 questions a real interviewer would 
    ask based on the specific technologies, projects, and claims in this 
    resume, cross-referenced against what the job actually requires. 
    Prioritize areas where the resume shows moderate depth (interviewers 
@@ -65,7 +65,7 @@ could apply to anyone.
    points to hit, a suggested structure (e.g. STAR, or trade-off framing), 
    and common mistakes to avoid for that specific question.
 
-3. **Behavioral Questions**: Generate 4-6 questions based on gaps, 
+3. **Behavioral Questions**: Generate 4 questions based on gaps, 
    transitions, or notable patterns in the resume (job changes, career 
    pivots, leadership claims, team size, etc.) as well as standard 
    behavioral areas relevant to this role's seniority level. Same depth 
@@ -77,29 +77,42 @@ could apply to anyone.
    importance based on how central that skill is to the job description. 
    These gaps should be consistent with the match score you gave above.
 
-5. **Roadmap**: Build a realistic week-by-week plan (aim for 4-8 weeks, 
-   scoped to how large the gaps are) to close the identified skill gaps 
-   before the interview. Each week should have a clear focus, concrete 
-   topics, actionable tasks (not just "study X" — specify what to build, 
-   read, or practice), and named resources (courses, docs, repos, or 
-   practice platforms) where possible.
+5. **Roadmap**: Build a realistic week-by-week plan (aim for 4-6 weeks) 
+to close the identified skill gaps before the interview. 
 
-Be specific and realistic throughout. Do not pad the output with 
-boilerplate advice ("communicate clearly," "practice good body language") 
-that isn't tied to this specific candidate and role.
+IMPORTANT: The roadmap must be directly tied to THIS candidate's specific 
+skill gaps identified above. Do NOT generate a generic learning plan.
+
+For example:
+- If the candidate knows React but lacks testing → focus roadmap on 
+  Jest/Supertest specifically for React/Node apps
+- If the candidate has ML experience but lacks Docker → start roadmap 
+  with Dockerizing a Python ML app, not a generic Docker tutorial
+
+Each week must:
+- Reference specific technologies FROM the candidate's resume
+- Build on what the candidate ALREADY knows
+- Include tasks that involve MODIFYING or EXTENDING their existing projects
+- Name specific resources relevant to their exact stack
+
+Example of BAD task: "Learn Docker"
+Example of GOOD task: "Dockerize your existing Loan Default Prediction 
+Streamlit app and push the image to Docker Hub"
 `;
 
-    const interaction = await ai.interactions.create({
-        model: "gemini-2.5-flash",
-        input: prompt,
-        response_format: {
-            type: 'text',
-            mime_type: 'application/json',
-            schema: resumeJsonSchema
-        },
-    });
-    const resume = resumeSchema.parse(JSON.parse(interaction.output_text));
-   return resume;
+
+const interaction = await ai.interactions.create({
+  model: "gemini-3.5-flash",
+  input: prompt,
+  response_format: {
+    type: 'text',
+    mime_type: 'application/json',
+    schema: resumeJsonSchema.toJSONSchema()
+  },
+});
+
+const resume = resumeSchema.parse(JSON.parse(interaction.output_text));
+return resume;
 }
 
 

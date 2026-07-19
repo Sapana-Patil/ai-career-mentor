@@ -1,16 +1,35 @@
 const pdfParse=require('pdf-parse');
+const {generateReport}=require('../services/ai-service')
+const AnalysisReport=require('../models/anaylsisReport')
 
 async function analyseResumeController(req, res) {
     try{
         const file=req.file;
-        if(!file){
-            return res.status(400).json({message:'No file uploaded'});
+        const {jobDescription,selfDescription}=req.body;
+        if(!file && !selfDescription){
+            return res.status(400).json({message:'Please provide resume or self description'});
         }
-
+        if(!jobDescription){
+            return res.status(400).json({ message: 'Job description is required' });
+        }
+        let resumeText='';
+        if(file){
         const pdfData = await pdfParse(file.buffer);
-        const resumeText = pdfData.text;
-        console.log( resumeText);
-        res.status(400).json({message:'Resume analyzed successfully', resumeText});
+         resumeText = pdfData.text;
+        }
+        const report=await generateReport(resumeText,selfDescription,jobDescription)
+
+         const saveReport=await AnalysisReport.create({
+            userId: req.user.id,
+            jobDescription,
+            resume:resumeText,
+            selfDescription,
+            ...report
+    })
+    res.status(201).json({
+        message:'Report generated succesfully',
+        report:saveReport
+    })
     }
     catch (error) {
         console.error("Error analyzing resume:", error);
