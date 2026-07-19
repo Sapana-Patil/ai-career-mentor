@@ -1,35 +1,35 @@
-const pdfParse=require('pdf-parse');
-const {generateReport}=require('../services/ai-service')
-const AnalysisReport=require('../models/anaylsisReport')
+const pdfParse = require('pdf-parse');
+const { generateReport } = require('../services/ai-service')
+const AnalysisReport = require('../models/anaylsis.model')
 
 async function analyseResumeController(req, res) {
-    try{
-        const file=req.file;
-        const {jobDescription,selfDescription}=req.body;
-        if(!file && !selfDescription){
-            return res.status(400).json({message:'Please provide resume or self description'});
+    try {
+        const file = req.file;
+        const { jobDescription, selfDescription } = req.body;
+        if (!file && !selfDescription) {
+            return res.status(400).json({ message: 'Please provide resume or self description' });
         }
-        if(!jobDescription){
+        if (!jobDescription) {
             return res.status(400).json({ message: 'Job description is required' });
         }
-        let resumeText='';
-        if(file){
-        const pdfData = await pdfParse(file.buffer);
-         resumeText = pdfData.text;
+        let resumeText = '';
+        if (file) {
+            const pdfData = await pdfParse(file.buffer);
+            resumeText = pdfData.text;
         }
-        const report=await generateReport(resumeText,selfDescription,jobDescription)
+        const report = await generateReport(resumeText, selfDescription, jobDescription)
 
-         const saveReport=await AnalysisReport.create({
+        const saveReport = await AnalysisReport.create({
             userId: req.user.id,
             jobDescription,
-            resume:resumeText,
+            resume: resumeText,
             selfDescription,
             ...report
-    })
-    res.status(201).json({
-        message:'Report generated succesfully',
-        report:saveReport
-    })
+        })
+        res.status(201).json({
+            message: 'Report generated succesfully',
+            report: saveReport
+        })
     }
     catch (error) {
         console.error("Error analyzing resume:", error);
