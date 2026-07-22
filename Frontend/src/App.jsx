@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { BrowserRouter } from 'react-router-dom'
 import AppRoutes from './app.route'
 import './index.css'
+import { AuthProvider } from './features/auth/context/auth.context'
 
 function App() {
   return (
-    <BrowserRouter>
+    <AuthProvider>
       <AppRoutes />
-    </BrowserRouter>
+    </AuthProvider>
   )
 }
 
